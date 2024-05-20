@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gyro Sensor Example</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    #container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    #image {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <img id="image" src="img01.png" alt="Gyro Image">
+  </div>
+
+  <script>
+    let img = document.getElementById('image');
+    let container = document.getElementById('container');
+    let imgWidth = img.clientWidth;
+    let imgHeight = img.clientHeight;
+    let containerWidth = container.clientWidth;
+    let containerHeight = container.clientHeight;
+
+    let posX = containerWidth / 2 - imgWidth / 2;
+    let posY = containerHeight / 2 - imgHeight / 2;
+    let velocityX = 0;
+    let velocityY = 0;
+
+    window.addEventListener('deviceorientation', (event) => {
+      let beta = event.beta; // Rotation around X axis
+      let gamma = event.gamma; // Rotation around Y axis
+
+      // Adjust the velocities based on the device orientation
+      velocityX += gamma / 50;
+      velocityY += beta / 50;
+    });
+
+    function updatePosition() {
+      // Apply friction to reduce speed over time
+      velocityX *= 0.98;
+      velocityY *= 0.98;
+
+      posX += velocityX;
+      posY += velocityY;
+
+      // Check for collision with walls and reverse velocity if hit
+      if (posX < 0 || posX + imgWidth > containerWidth) {
+        posX = posX < 0 ? 0 : containerWidth - imgWidth;
+        randomizeVelocity('x', posY < containerHeight / 2 ? 'top' : 'bottom');
+      }
+
+      if (posY < 0 || posY + imgHeight > containerHeight) {
+        posY = posY < 0 ? 0 : containerHeight - imgHeight;
+        randomizeVelocity('y', posX < containerWidth / 2 ? 'left' : 'right');
+      }
+
+      img.style.left = `${posX}px`;
+      img.style.top = `${posY}px`;
+
+      requestAnimationFrame(updatePosition);
+    }
+
+    function randomizeVelocity(axis, excludeDirection) {
+      // Generate a random angle
+      let angle;
+      if (axis === 'x') {
+        // Exclude certain directions based on the collision with vertical walls
+        if (excludeDirection === 'top') {
+          angle = (Math.random() * 180 + 90) * Math.PI / 180;
+        } else {
+          angle = (Math.random() * 180 - 90) * Math.PI / 180;
+        }
+      } else {
+        // Exclude certain directions based on the collision with horizontal walls
+        if (excludeDirection === 'left') {
+          angle = (Math.random() * 180) * Math.PI / 180;
+        } else {
+          angle = (Math.random() * 180 + 180) * Math.PI / 180;
+        }
+      }
+      let speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+      velocityX = speed * Math.cos(angle);
+      velocityY = speed * Math.sin(angle);
+    }
+
+    updatePosition();
+  </script>
+</body>
+</html>
